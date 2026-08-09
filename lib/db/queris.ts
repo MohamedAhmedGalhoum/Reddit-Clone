@@ -6,7 +6,7 @@ export type FeedPostRow = {
     score: number;
     userVote: -1 | 0 | 1;
 };
-export async function listPostsSorted(sort: FeedSort, tagFilter: string | undefined, userId:string | undefined){
+export async function listPostsSorted(sort: FeedSort, tagFilter: string | undefined, userId:string | undefined): Promise<FeedPostRow[]> {
     const where = tagFilter ? {postTags: {some: {tagSlug: tagFilter.toLocaleLowerCase()}}} : undefined;
     const postRows = await prisma.post.findMany({
         where,
