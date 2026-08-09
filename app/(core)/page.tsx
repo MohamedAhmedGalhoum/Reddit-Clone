@@ -22,5 +22,10 @@ export default async function Home({
   const tagFilter = sp.tag?.toLocaleLowerCase();
 
   const sessionUser = await getSessionUser();
+  const rows = await listPostsSorted(
+    sort, 
+    tagFilter,
+    sessionUser?.id
+  );
   
 }
