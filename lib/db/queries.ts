@@ -1,11 +1,43 @@
 import { PostModel } from "../generated/prisma/models";
 import { prisma } from "../prisma";
-import {FeedSort, Post} from "../types";
+import {FeedSort, Post, Tag, User} from "../types";
 export type FeedPostRow = {
     post: Post;
     score: number;
     userVote: -1 | 0 | 1;
 };
+export async function batchAuthorsForIds(
+  authorIds: string[],
+): Promise<Map<string, User>> {
+  const unique = [...new Set(authorIds)];
+  if (unique.length === 0) return new Map();
+
+  const rows = await prisma.userProfile.findMany({
+    where: { id: { in: unique } },
+  });
+
+  const result = new Map<string, User>();
+
+  for (const row of rows) {
+    result.set(row.id, { id: row.id, username: row.username });
+  }
+
+  for (const id of unique) {
+    if (!result.has(id)) {
+      result.set(id, { id, username: `user_${id.slice(0, 6)}` });
+    }
+  }
+
+  return result;
+}
+export async function listTags(): Promise<Tag[]> {
+  const rows = await prisma.tag.findMany({ orderBy: { slug: "asc" } });
+  return rows.map((t) => ({
+    slug: t.slug,
+    label: t.label,
+    hashColor: t.hashColor,
+  }));
+}
 export async function listPostsSorted(sort: FeedSort, tagFilter: string | undefined, userId:string | undefined): Promise<FeedPostRow[]> {
     const where = tagFilter ? {postTags: {some: {tagSlug: tagFilter.toLocaleLowerCase()}}} : undefined;
     const postRows = await prisma.post.findMany({
