@@ -1,31 +1,50 @@
 "use client";
-import {cn} from "@/lib/utils";
+
+import { cn } from "@/lib/utils";
 import { Flame, Home, LayoutGrid } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { LeftTags } from "./left-tags";
 import { JoinCtaCard } from "./join-cta-card";
+import { Tag } from "@/lib/types";
 
 const nav = [
   { href: "/", label: "Home", icon: Home, match: "home" as const },
   { href: "/?sort=hot", label: "Popular", icon: Flame, match: "hot" as const },
-  { href: "/?sort=new", label: "All Posts", icon: LayoutGrid, match: "new" as const },
+  {
+    href: "/?sort=new",
+    label: "All Posts",
+    icon: LayoutGrid,
+    match: "new" as const,
+  },
 ];
 
-export function LeftSidebar({ showCta }: { showCta: boolean }) {
+export function LeftSidebar({
+  showCta,
+  tagsWithCounts,
+}: {
+  showCta: boolean;
+  tagsWithCounts: { tag: Tag; count: number }[];
+}) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const sort = searchParams.get("sort");
+  const sp = useSearchParams();
+  const sort = sp.get("sort");
 
   return (
     <aside className="hidden w-52 shrink-0 lg:block">
       <nav className="space-y-1 pr-2">
         {nav.map(({ href, label, icon: Icon, match }) => {
           const active =
-            (match === "home" && pathname === "/" && !sort) ||
-            (match === "hot" && sort === "hot") ||
-            (match === "new" && sort === "new");
+            match === "home"
+              ? pathname === "/" &&
+                sort !== "hot" &&
+                sort !== "new" &&
+                sort !== "top"
+              : match === "hot"
+                ? pathname === "/" && sort === "hot"
+                : match === "new"
+                  ? pathname === "/" && sort === "new"
+                  : false;
 
           return (
             <Link
@@ -48,12 +67,14 @@ export function LeftSidebar({ showCta }: { showCta: boolean }) {
         })}
       </nav>
       <div className="mt-8">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Top Tags</p>
-        <LeftTags/>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Top Tags
+        </p>
+        <LeftTags items={tagsWithCounts} />
       </div>
       {showCta && (
         <div className="mt-8">
-            <JoinCtaCard/>
+          <JoinCtaCard />
         </div>
       )}
     </aside>
