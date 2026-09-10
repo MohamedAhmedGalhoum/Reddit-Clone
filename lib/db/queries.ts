@@ -1,6 +1,7 @@
 import { EnrichedCommentNode, nestCommentRows } from "@/lib/comment-tree";
 import { PostModel } from "../generated/prisma/models";
 import { prisma } from "../prisma";
+import { Prisma } from "../generated/prisma/client";
 import { Comment, FeedSort, Post, Tag, User, VoteTarget } from "../types";
 
 export async function batchAuthorsForIds(
@@ -47,10 +48,39 @@ export async function listPostsSorted(
   sort: FeedSort,
   tagFilter: string | undefined,
   userId: string | undefined,
+  searchQuery: string | undefined,
 ): Promise<FeedPostRow[]> {
-  const where = tagFilter
-    ? { postTags: { some: { tagSlug: tagFilter.toLowerCase() } } }
-    : undefined;
+  const search = searchQuery?.trim();
+  const where: Prisma.PostWhereInput = {
+    ...(tagFilter
+      ? {
+          postTags: {
+            some: {
+              tagSlug: tagFilter.toLowerCase(),
+            },
+          },
+        }
+      : {}),
+    ...(search
+      ? {
+          OR: [
+            {
+              title: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+            {
+              body: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+          ],
+        }
+      : {}),
+  };
+
   const postRows = await prisma.post.findMany({
     where,
     orderBy: { createdAt: "desc" },

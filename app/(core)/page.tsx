@@ -1,42 +1,44 @@
 import { FeedSortTabs } from "@/components/feed/feed-sort-tabs";
 import { PostCard } from "@/components/feed/post-card";
 import { RightTrending } from "@/components/layout/right-trending";
-import { auth, getSessionUser } from "@/lib/auth";
+import { getSessionUser } from "@/lib/auth";
 import {
   batchAuthorsForIds,
   listPostsSorted,
   listTags,
 } from "@/lib/db/queries";
 import { getTrendingToday } from "@/lib/trending";
-import { FeedSort, Tag } from "@/lib/types";
-import Image from "next/image";
+import { FeedSort } from "@/lib/types";
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; tag?: string }>;
+  searchParams: Promise<{
+    sort?: string;
+    tag?: string;
+    search?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const sortRaw = sp.sort;
-  const sort: FeedSort =
-    sortRaw === "new" || sortRaw === "top" ? sortRaw : "hot";
-
+  const sort: FeedSort = sortRaw === "new" || sortRaw === "top" ? sortRaw : "hot";
   const tagFilter = sp.tag?.toLowerCase();
-
+  const searchQuery = sp.search?.trim();
   const sessionUser = await getSessionUser();
-  const rows = await listPostsSorted(sort, tagFilter, sessionUser?.id);
-
+  const rows = await listPostsSorted(
+    sort,
+    tagFilter,
+    sessionUser?.id,
+    searchQuery,
+  );
   const tags = await listTags();
   const tagMap = new Map(tags.map((t) => [t.slug, t]));
-
   const authorIds = [...new Set(rows.map((r) => r.post.authorId))];
   const authorById = await batchAuthorsForIds(authorIds);
   if (sessionUser && authorById.has(sessionUser.id)) {
     authorById.set(sessionUser.id, sessionUser);
   }
-
   const trending = getTrendingToday();
-
   const cards = rows.map((row) => {
     const author = authorById.get(row.post.authorId);
     if (!author) return null;
@@ -66,7 +68,6 @@ export default async function Home({
       </div>
       <aside className="hidden w-72 shrink-0 space-y-6 lg:block">
         <RightTrending items={trending} />
-        {/* <RightTopTags /> */}
       </aside>
     </div>
   );
