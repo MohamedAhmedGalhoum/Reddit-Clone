@@ -2,7 +2,7 @@ import { createNeonAuth } from "@neondatabase/auth/next/server";
 import { cache } from "react";
 import {User} from "./types";
 import { ensureUserProfile } from "./db/user-profile";
-
+export const dynamic = "force-dynamic";
 export const auth = createNeonAuth({
   baseUrl: process.env.NEON_AUTH_BASE_URL!,
   cookies: {
